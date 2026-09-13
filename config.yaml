@@ -1,0 +1,21 @@
+search:
+  lookback_hours: 72
+  max_results: 250
+  max_candidates_for_llm: 30
+  minimum_keyword_score: 1
+  categories: [cs.CV, cs.CL, cs.LG, cs.AI, cs.DC, cs.AR, cs.PF, eess.IV, eess.SP]
+topics:
+  多模态:
+    include: [multimodal, multi-modal, vision-language, vision language model, VLM, MLLM, large multimodal model, visual instruction tuning, image-text, video-language, audio-language, embodied multimodal, document understanding, visual question answering, image captioning]
+    exclude: [medical imaging]
+  模型加速与优化:
+    include: [efficient inference, inference optimization, LLM serving, model acceleration, quantization, low-bit, pruning, knowledge distillation, speculative decoding, KV cache, flash attention, FlashAttention, sparse attention, sparsity, mixture of experts, tensor parallelism, pipeline parallelism, distributed inference, compiler optimization, kernel optimization, hardware-aware, edge deployment, memory efficient, throughput, inference latency]
+    exclude: [database query]
+llm:
+  model: sensenova-6.8-flash-lite
+  chunk_size: 8
+digest:
+  top_n: 8
+  minimum_relevance_score: 55
+  create_github_issue: true
+  state_file: state/seen.json

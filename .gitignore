@@ -1,8 +1,5 @@
-.ipynb_checkpoints
-__pycache__
-*.swp
-*.pyc
-.idea
-*.pdf
-*.PDF
-pdf_files
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.pytest_cache/

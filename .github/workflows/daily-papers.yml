@@ -1,0 +1,50 @@
+name: Daily paper digest
+on:
+  schedule:
+    - cron: "30 23 * * *"
+  workflow_dispatch:
+    inputs:
+      include_seen:
+        description: Include papers already analyzed
+        required: false
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  issues: write
+concurrency:
+  group: daily-paper-digest
+  cancel-in-progress: false
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --requirement requirements.txt
+      - name: Generate and send digest
+        env:
+          SENSENOVA_API_KEY: ${{ secrets.SENSENOVA_API_KEY }}
+          SENSENOVA_BASE_URL: https://token.sensenova.cn/v1
+          SENSENOVA_MODEL: sensenova-6.8-flash-lite
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_RECIPIENT: yangxue7410@gmail.com
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          GITHUB_TOKEN: ${{ github.token }}
+          INCLUDE_SEEN: ${{ inputs.include_seen }}
+        run: |
+          EXTRA_ARGS=""
+          if [ "$INCLUDE_SEEN" = "true" ]; then EXTRA_ARGS="--include-seen"; fi
+          python main.py $EXTRA_ARGS
+      - name: Commit digest and history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add export state
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: archive daily paper digest"
+          git push
