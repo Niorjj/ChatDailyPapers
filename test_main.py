@@ -48,6 +48,12 @@ class Tests(unittest.TestCase):
         args = client.chat.completions.create.call_args.kwargs
         self.assertEqual(args["model"], "sensenova-6.8-flash-lite")
 
+    def test_cli_config_maps_to_run_parameter(self):
+        with patch("sys.argv", ["main.py", "--config", "custom.yaml", "--dry-run"]):
+            args = main.parse_args()
+        self.assertEqual(args.config_path, Path("custom.yaml"))
+        self.assertTrue(args.dry_run)
+
 
 if __name__ == "__main__":
     unittest.main()

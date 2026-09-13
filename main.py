@@ -288,7 +288,7 @@ def run(config_path: Path, *, dry_run: bool = False, include_seen: bool = False)
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Daily multimodal and model-optimization paper digest")
-    parser.add_argument("--config", type=Path, default=ROOT / "config.yaml")
+    parser.add_argument("--config", dest="config_path", type=Path, default=ROOT / "config.yaml")
     parser.add_argument("--dry-run", action="store_true"); parser.add_argument("--include-seen", action="store_true")
     return parser.parse_args()
 
