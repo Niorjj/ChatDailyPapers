@@ -1,8 +1,12 @@
 search:
   lookback_hours: 72
-  max_results: 250
+  # A single smaller page is friendlier to arXiv and avoids extra paginated calls.
+  max_results: 100
   max_candidates_for_llm: 30
   minimum_keyword_score: 1
+  initial_jitter_seconds: 90
+  retry_delays_seconds: [45, 120, 300, 600]
+  retry_jitter_seconds: 30
   categories: [cs.CV, cs.CL, cs.LG, cs.AI, cs.DC, cs.AR, cs.PF, eess.IV, eess.SP]
 topics:
   多模态:

@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import re
 import smtplib
 import time
@@ -87,18 +88,52 @@ def extract_arxiv_id(result: arxiv.Result) -> str:
     return match.group(1) if match else result.entry_id.rsplit("/", 1)[-1].split("v", 1)[0]
 
 
+def collect_arxiv_results(
+    client: arxiv.Client,
+    search: arxiv.Search,
+    retry_delays: list[float],
+    retry_jitter: float = 0,
+) -> list[arxiv.Result]:
+    """Collect results with slow retries suitable for shared CI egress IPs."""
+    for attempt in range(len(retry_delays) + 1):
+        try:
+            return list(client.results(search))
+        except arxiv.HTTPError as error:
+            retryable = error.status == 429 or error.status >= 500
+            if not retryable or attempt == len(retry_delays):
+                raise
+            delay = retry_delays[attempt] + random.uniform(0, max(0, retry_jitter))
+            LOGGER.warning(
+                "arXiv returned HTTP %s; retrying in %.0f seconds (%d/%d)",
+                error.status, delay, attempt + 1, len(retry_delays),
+            )
+            time.sleep(delay)
+    return []
+
+
 def fetch_candidates(config: dict[str, Any]) -> list[Paper]:
     cfg = config["search"]
     query = " OR ".join(f"cat:{category}" for category in cfg["categories"])
     max_results = int(cfg.get("max_results", 250))
     cutoff = datetime.now(timezone.utc) - timedelta(hours=float(cfg.get("lookback_hours", 72)))
-    client = arxiv.Client(page_size=min(max_results, 100), delay_seconds=3, num_retries=3)
+    client = arxiv.Client(page_size=min(max_results, 100), delay_seconds=4, num_retries=0)
     search = arxiv.Search(
         query=f"({query})", max_results=max_results,
         sort_by=arxiv.SortCriterion.LastUpdatedDate, sort_order=arxiv.SortOrder.Descending,
     )
+    initial_jitter = float(cfg.get("initial_jitter_seconds", 0))
+    if os.environ.get("GITHUB_ACTIONS") == "true" and initial_jitter > 0:
+        delay = random.uniform(5, initial_jitter)
+        LOGGER.info("CI request staggering: waiting %.0f seconds", delay)
+        time.sleep(delay)
+    results = collect_arxiv_results(
+        client,
+        search,
+        [float(value) for value in cfg.get("retry_delays_seconds", [45, 120, 300, 600])],
+        float(cfg.get("retry_jitter_seconds", 30)),
+    )
     papers = []
-    for result in client.results(search):
+    for result in results:
         if result.updated.astimezone(timezone.utc) < cutoff:
             continue
         paper = Paper(

@@ -18,7 +18,7 @@
 
 ## 工作流程
 
-1. 在多个 AI、视觉、语言和系统 arXiv 分类中回溯 72 小时。
+1. 在多个 AI、视觉、语言和系统 arXiv 分类中回溯 72 小时；GitHub Actions 会随机错峰，并对 arXiv 429/5xx 限流错误进行阶梯退避重试。
 2. 用 `config.yaml` 中的关键词高召回初筛。
 3. 调用 `sensenova-6.8-flash-lite` 对最多 30 篇候选论文评分和总结。
 4. 发送 Top 8 的 HTML、纯文本及 Markdown 附件。

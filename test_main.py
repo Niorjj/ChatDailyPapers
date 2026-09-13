@@ -54,6 +54,18 @@ class Tests(unittest.TestCase):
         self.assertEqual(args.config_path, Path("custom.yaml"))
         self.assertTrue(args.dry_run)
 
+    @patch("main.time.sleep")
+    @patch("main.random.uniform", return_value=0)
+    def test_arxiv_429_uses_backoff_then_recovers(self, _uniform, sleep):
+        client = Mock()
+        client.results.side_effect = [
+            main.arxiv.HTTPError("https://export.arxiv.org/api/query", 0, 429),
+            iter(["paper"]),
+        ]
+        result = main.collect_arxiv_results(client, Mock(), [45], 0)
+        self.assertEqual(result, ["paper"])
+        sleep.assert_called_once_with(45)
+
 
 if __name__ == "__main__":
     unittest.main()
